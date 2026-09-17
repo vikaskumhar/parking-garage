@@ -201,3 +201,38 @@ Now improve the website design. I want a clean Apple-inspired look with modern t
 Finally, I want you to review the whole parking garage project from the perspective of an actual attendant using it during a busy day. Check the parking logic, fee calculation, spot allocation, duplicate vehicle handling, lookup functions, checkout flow, error messages, activity log, and UI. Fix anything that could cause incorrect charges or incorrect occupancy. Keep the system configurable so it works for different garages, not just the demo data.
 
 The final result should feel like a small production-quality parking management system that is simple for an attendant to understand and reliable enough to use throughout the day.
+
+## Prompt 51
+
+Please add authentication to the website. I want the attendant to sign in before seeing the garage dashboard, stay signed in during the browser session, and have a sign-out button.
+
+### Resulting direction
+
+- Add a dedicated Parkline sign-in screen before the dashboard.
+- Validate the demo operator credentials and show a useful error for invalid input.
+- Persist the authenticated state in `sessionStorage` for the active browser tab.
+- Show the signed-in operator in the header and provide logout.
+- Document that static client-side authentication is only a demo boundary and must be replaced with server or identity-provider authentication for production.
+
+## Prompt 52
+
+The login is too limited. Add a proper signup flow too, remember created operators, let users switch between sign in and create account, and keep the session after refreshing the page.
+
+### Resulting direction
+
+- Add sign-in and create-account tabs to the auth screen.
+- Validate names, unique operator IDs, password length, and password confirmation.
+- Store demo accounts in `localStorage` and the active session in `sessionStorage`.
+- Keep the security note visible because this is still a static frontend demo.
+
+## Prompt 53
+
+Extend the parking website so it feels like a high-level Apple-style product: colorful but calm, dynamic, responsive, and comfortable to swipe on a phone.
+
+### Resulting direction
+
+- Add live insight cards for occupancy, EV readiness, shift state, and operator guidance.
+- Use a native CSS scroll-snap rail for touch-friendly horizontal swiping.
+- Derive live metrics from garage state instead of hard-coding dashboard numbers.
+- Preserve the quiet Apple-inspired structure while adding blue, green, orange, and violet accents.
+- Keep the operational forms accessible and stack them cleanly on mobile.

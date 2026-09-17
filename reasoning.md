@@ -105,6 +105,24 @@ The visual direction takes cues from Apple's product pages: generous whitespace,
 
 The browser demo also normalizes license plates and rejects invalid checkout times before mutating occupancy. This keeps the client-side demonstration aligned with the Python system's core invariants.
 
+## Authentication Pipeline
+
+The static browser demo has a lightweight operator authentication layer:
+
+1. Load the sign-in screen before exposing the garage dashboard.
+2. Seed the local demo account if it does not exist.
+3. Let an operator switch between sign-in and account creation without leaving the page.
+4. Validate new account fields, prevent duplicate operator IDs, and store demo accounts in `localStorage`.
+5. Find the matching account during sign-in and store only an authenticated flag and display name in `sessionStorage`.
+6. Reveal the dashboard and show the active operator in the top bar.
+7. Clear the session and return to the sign-in screen when the operator signs out.
+
+This is a frontend experience layer, not secure production authentication. Since static HTML and JavaScript cannot safely keep a secret, a real deployment must verify credentials on a server or through an identity provider, issue a secure session cookie, and enforce authorization on every backend operation.
+
+## Live Insight and Responsive Pipeline
+
+The dashboard derives occupancy percentage, open EV bays, and current shift time from the same in-memory garage state used by the forms. These values are re-rendered whenever configuration, check-in, or checkout changes. The insight cards are laid out as a horizontal scroll-snap rail, which gives touch users a natural swipe interaction while desktop users see the complete row. CSS media queries stack the operational panels, reduce navigation density, and preserve large touch targets on smaller screens.
+
 ## Verification Strategy
 
 The tests focus on business invariants rather than only happy-path output:

@@ -8,6 +8,40 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <section id="auth-screen" class="auth-screen" aria-labelledby="auth-title">
+      <div class="auth-glow auth-glow-one" aria-hidden="true"></div>
+      <div class="auth-glow auth-glow-two" aria-hidden="true"></div>
+      <div class="auth-card reveal">
+        <a class="brand auth-brand" href="#" aria-label="Parkline sign in">
+          <span class="brand-mark" aria-hidden="true">P</span>
+          <span>Parkline</span>
+        </a>
+        <div class="auth-copy">
+          <p class="eyebrow">SECURE OPERATIONS</p>
+          <h1 id="auth-title">Welcome back.</h1>
+          <p id="auth-description">Sign in to manage arrivals, capacity, and every active parking session.</p>
+        </div>
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+          <button class="auth-tab active" data-auth-mode="login" type="button" role="tab" aria-selected="true">Sign in</button>
+          <button class="auth-tab" data-auth-mode="signup" type="button" role="tab" aria-selected="false">Create account</button>
+        </div>
+        <form id="login-form" class="login-form">
+          <label><span>Operator ID</span><input id="login-user" autocomplete="username" required value="attendant" /></label>
+          <label><span>Password</span><input id="login-password" type="password" autocomplete="current-password" required placeholder="Enter password" /></label>
+          <button class="button button-blue" type="submit">Sign in <span>→</span></button>
+          <p id="login-error" class="login-error" role="alert" aria-live="polite"></p>
+        </form>
+        <form id="signup-form" class="login-form" hidden>
+          <label><span>Your name</span><input id="signup-name" autocomplete="name" required placeholder="Alex Morgan" /></label>
+          <label><span>Operator ID</span><input id="signup-user" autocomplete="username" required placeholder="alex.morgan" /></label>
+          <label><span>Password</span><input id="signup-password" type="password" autocomplete="new-password" minlength="8" required placeholder="8 characters minimum" /></label>
+          <label><span>Confirm password</span><input id="signup-confirm" type="password" autocomplete="new-password" minlength="8" required placeholder="Repeat your password" /></label>
+          <button class="button button-blue" type="submit">Create account <span>→</span></button>
+          <p id="signup-error" class="login-error" role="alert" aria-live="polite"></p>
+        </form>
+        <p class="auth-note"><span class="lock-icon" aria-hidden="true">▣</span> Demo access: <strong>attendant</strong> / <strong>parkline2026</strong><br />Accounts are stored locally for this browser demo. Use a server identity provider in production.</p>
+      </div>
+    </section>
     <div class="app">
       <header class="topbar reveal">
         <a class="brand" href="#top" aria-label="Parkline home">
@@ -18,7 +52,7 @@
           <a href="#operations">Operations</a>
           <a href="#live-view">Live view</a>
         </nav>
-        <div class="system-status"><span></span> System live</div>
+        <div class="account-menu"><div class="system-status"><span></span> System live</div><span class="account-name" id="account-name">Attendant</span><button id="logout-button" class="logout-button" type="button">Sign out</button></div>
       </header>
 
       <main id="top">
@@ -44,6 +78,13 @@
             <span>Updated as vehicles move.</span>
           </div>
           <div id="availability" class="availability-grid"></div>
+        </section>
+
+        <section class="insight-rail reveal reveal-delay-2" aria-label="Garage insights">
+          <article class="insight-card insight-blue"><span class="insight-icon">↗</span><p>Occupancy</p><strong id="occupancy-rate">50%</strong><small id="occupancy-copy">of the garage is in use</small></article>
+          <article class="insight-card insight-green"><span class="insight-icon">⚡</span><p>EV ready</p><strong id="ev-ready">1 bay</strong><small>charging spaces available</small></article>
+          <article class="insight-card insight-orange"><span class="insight-icon">◷</span><p>Shift status</p><strong>Operating</strong><small id="shift-time">Live since now</small></article>
+          <article class="insight-card insight-violet"><span class="insight-icon">✦</span><p>Parkline tip</p><strong>Balanced flow</strong><small>Compact cars can use standard bays</small></article>
         </section>
 
         <section class="operations-grid">

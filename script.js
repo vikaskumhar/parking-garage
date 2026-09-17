@@ -1,3 +1,138 @@
+const AUTH_STORAGE_KEY = 'parkline.authenticated';
+const AUTH_USER_KEY = 'parkline.operator';
+const ACCOUNT_STORAGE_KEY = 'parkline.accounts';
+const DEMO_OPERATOR = 'attendant';
+const DEMO_PASSWORD = 'parkline2026';
+
+const authEls = {
+  screen: document.getElementById('auth-screen'),
+  form: document.getElementById('login-form'),
+  user: document.getElementById('login-user'),
+  password: document.getElementById('login-password'),
+  error: document.getElementById('login-error'),
+  description: document.getElementById('auth-description'),
+  signup: document.getElementById('signup-form'),
+  signupName: document.getElementById('signup-name'),
+  signupUser: document.getElementById('signup-user'),
+  signupPassword: document.getElementById('signup-password'),
+  signupConfirm: document.getElementById('signup-confirm'),
+  signupError: document.getElementById('signup-error'),
+  tabs: [...document.querySelectorAll('[data-auth-mode]')],
+  logout: document.getElementById('logout-button'),
+  account: document.getElementById('account-name'),
+};
+
+function getAccounts() {
+  const stored = JSON.parse(localStorage.getItem(ACCOUNT_STORAGE_KEY) || '[]');
+  if (!stored.some((account) => account.user === DEMO_OPERATOR)) {
+    stored.push({ name: 'Attendant', user: DEMO_OPERATOR, password: DEMO_PASSWORD });
+    localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(stored));
+  }
+  return stored;
+}
+
+function setAuthMode(mode) {
+  const signup = mode === 'signup';
+  authEls.form.hidden = signup;
+  authEls.signup.hidden = !signup;
+  authEls.description.textContent = signup
+    ? 'Create an operator profile for this garage workspace.'
+    : 'Sign in to manage arrivals, capacity, and every active parking session.';
+  authEls.tabs.forEach((tab) => {
+    const active = tab.dataset.authMode === mode;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+  });
+}
+
+function setAuthenticated(operator) {
+  document.body.classList.add('authenticated');
+  authEls.screen.setAttribute('hidden', '');
+  authEls.account.textContent = operator;
+  sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
+  sessionStorage.setItem(AUTH_USER_KEY, operator);
+}
+
+function clearAuthenticated() {
+  document.body.classList.remove('authenticated');
+  authEls.screen.removeAttribute('hidden');
+  authEls.password.value = '';
+  authEls.error.textContent = '';
+  sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  sessionStorage.removeItem(AUTH_USER_KEY);
+  authEls.user.focus();
+}
+
+function initializeAuthentication() {
+  getAccounts();
+  const authenticated = sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+  const operator = sessionStorage.getItem(AUTH_USER_KEY) || DEMO_OPERATOR;
+
+  if (authenticated) {
+    setAuthenticated(operator);
+  } else {
+    clearAuthenticated();
+  }
+
+  authEls.form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const user = authEls.user.value.trim().toLowerCase();
+    const password = authEls.password.value;
+
+    const account = getAccounts().find((entry) => entry.user === user && entry.password === password);
+    if (!account) {
+      authEls.error.textContent = 'That operator ID or password is not recognised.';
+      authEls.password.select();
+      return;
+    }
+
+    authEls.error.textContent = '';
+    setAuthenticated(account.name || user);
+    setStatus('Signed in to Parkline Operations', 'success');
+  });
+
+  authEls.signup.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const name = authEls.signupName.value.trim();
+    const user = authEls.signupUser.value.trim().toLowerCase();
+    const password = authEls.signupPassword.value;
+    const confirm = authEls.signupConfirm.value;
+    const accounts = getAccounts();
+
+    if (accounts.some((account) => account.user === user)) {
+      authEls.signupError.textContent = 'That operator ID is already registered.';
+      return;
+    }
+    if (password !== confirm) {
+      authEls.signupError.textContent = 'Passwords do not match.';
+      return;
+    }
+    if (!/^[a-z0-9._-]{3,24}$/.test(user)) {
+      authEls.signupError.textContent = 'Use 3–24 lowercase letters, numbers, dots, dashes, or underscores.';
+      return;
+    }
+
+    accounts.push({ name, user, password });
+    localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accounts));
+    setAuthenticated(name || user);
+    authEls.signup.reset();
+    setStatus('Your Parkline account is ready', 'success');
+  });
+
+  authEls.tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      setAuthMode(tab.dataset.authMode);
+      const activeForm = tab.dataset.authMode === 'signup' ? authEls.signupUser : authEls.user;
+      activeForm.focus();
+    });
+  });
+
+  authEls.logout.addEventListener('click', () => {
+    clearAuthenticated();
+    setStatus('You have been signed out', 'success');
+  });
+}
+
 class Car {
   constructor(plate, vehicleType) {
     this.plate = plate;
@@ -124,6 +259,10 @@ const els = {
   carsBody: document.getElementById('cars-body'),
   log: document.getElementById('log'),
   vehicleCount: document.getElementById('vehicle-count'),
+  occupancyRate: document.getElementById('occupancy-rate'),
+  occupancyCopy: document.getElementById('occupancy-copy'),
+  evReady: document.getElementById('ev-ready'),
+  shiftTime: document.getElementById('shift-time'),
   checkinForm: document.getElementById('checkin-form'),
   checkoutForm: document.getElementById('checkout-form'),
 };
@@ -167,6 +306,15 @@ function renderAvailability() {
       <strong>${available[type]}</strong>
     </div>
   `).join('');
+
+  const total = Object.values(state.garage.spots).reduce((sum, value) => sum + value, 0);
+  const free = Object.values(available).reduce((sum, value) => sum + value, 0);
+  const occupied = Math.max(0, total - free);
+  const rate = total ? Math.round((occupied / total) * 100) : 0;
+  els.occupancyRate.textContent = `${rate}%`;
+  els.occupancyCopy.textContent = `${occupied} of ${total} spaces in use`;
+  els.evReady.textContent = `${available.ev} ${available.ev === 1 ? 'bay' : 'bays'}`;
+  els.shiftTime.textContent = `Live since ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
 
 function renderCars() {
@@ -263,3 +411,4 @@ function seedDemo() {
 }
 
 seedDemo();
+initializeAuthentication();

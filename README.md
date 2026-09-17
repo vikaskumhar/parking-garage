@@ -15,6 +15,7 @@ A configurable multi-floor parking garage system for checking vehicles in and ou
 - Hourly pricing with a configurable daily cap
 - Interactive command-line interface
 - Polished responsive browser dashboard with setup, check-in, check-out, availability, and activity log
+- Client-side operator sign-in gate with session persistence and logout
 
 ## Project Files
 
@@ -69,6 +70,17 @@ python -m http.server 8000
 ```
 
 Then open [http://localhost:8000](http://localhost:8000) in a browser. If port `8000` is already in use, start the server on another port, for example `python -m http.server 8080`.
+
+The browser demo sign-in uses:
+
+- Operator ID: `attendant`
+- Password: `parkline2026`
+
+Use **Create account** on the sign-in screen to register another local demo operator. The account is remembered in that browser using `localStorage`, while the active sign-in is remembered for the current tab using `sessionStorage`.
+
+This authentication is intentionally client-side because the project is served as static files. It protects the demo workflow and demonstrates the user experience, but it is not a production security boundary. Production authentication should move credential verification and session management to a backend or identity provider.
+
+The dashboard also includes swipeable insight cards for occupancy, EV readiness, shift status, and operator tips. On mobile, the cards and operational sections use native horizontal scrolling and responsive stacking so the main actions remain comfortable to use.
 
 ## Pricing Rules
 
