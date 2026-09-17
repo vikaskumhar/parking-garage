@@ -1,0 +1,103 @@
+# Core Logic and Processing Pipeline
+
+## Goal
+
+The system must ensure that every active vehicle has one valid location, no spot is assigned to two vehicles, EV rules are enforced, and checkout produces a deterministic fee.
+
+## Domain Objects
+
+### Vehicle
+
+`Vehicle` stores the license plate and vehicle type. Input is normalized by trimming the plate, converting it to uppercase, and converting the vehicle type to lowercase. Only `compact`, `standard`, and `ev` are accepted.
+
+### ParkingSpot
+
+`ParkingSpot` stores its floor, number, type, identifier, and occupancy state. The `occupied` flag is changed only when a ticket is successfully created or checked out.
+
+### ParkingTicket
+
+`ParkingTicket` connects a vehicle to a spot and entry time. It also stores checkout time and the final fee after checkout.
+
+## Garage Initialization
+
+1. Validate that the number of floors and spaces per floor is positive.
+2. Build every spot for every floor.
+3. Assign each spot a type based on the configured compact and EV counts.
+4. Index spots by ID and by floor.
+5. Create empty active-session indexes for plates and ticket IDs.
+
+The garage is configurable because spot types and floor counts are constructor inputs rather than hard-coded business assumptions.
+
+## Check-in Pipeline
+
+1. Normalize or validate the incoming vehicle.
+2. Check the plate index. An active plate cannot check in twice.
+3. Select the first compatible unoccupied spot.
+4. Enforce compatibility:
+   - EV vehicles can use EV spots only.
+   - Compact vehicles prefer compact spots and may use standard spots.
+   - Standard vehicles use standard spots only.
+5. Generate a unique ticket ID.
+6. Mark the spot occupied.
+7. Add the ticket to both the plate and ticket indexes.
+8. Return the ticket containing the assigned floor and spot.
+
+The occupancy flag and both indexes are updated together so lookup and availability remain consistent.
+
+## Fee Calculation Pipeline
+
+1. Reject an exit time earlier than the entry time.
+2. Divide the stay into rolling 24-hour windows starting at entry.
+3. For each window, round partial hours up.
+4. Charge the first-hour rate for the first started hour.
+5. Charge the additional-hour rate for each later started hour.
+6. Apply the daily cap to that 24-hour window.
+7. Add all window totals.
+
+For example, a 2 hour 15 minute stay with rates of 50 for the first hour and 30 for each additional hour costs 110 because it uses three started hours.
+
+## Checkout Pipeline
+
+1. Normalize the requested plate.
+2. Find the active ticket by plate.
+3. Calculate the fee using the stored entry time and supplied exit time.
+4. Store the exit time and fee on the ticket.
+5. Mark the ticket's spot as available.
+6. Remove the ticket from both active indexes.
+7. Return the fee.
+
+After checkout, the vehicle can check in again and the released spot can be assigned to another compatible vehicle.
+
+## Lookup and Availability
+
+- Plate lookup uses `_sessions_by_plate`.
+- Ticket lookup uses `_sessions_by_ticket`.
+- Spot availability scans indexed spots and counts unoccupied spots, optionally filtered by type.
+- Occupied spot reporting compares active tickets with their assigned spots.
+
+These structures make the invariants visible and keep the main operations straightforward.
+
+## Browser Pipeline
+
+The browser demo mirrors the core workflow in JavaScript:
+
+1. Configure spot counts and pricing.
+2. Create a `Car` and check it into the in-memory `ParkingGarage`.
+3. Resolve a compatible spot type and update occupancy.
+4. Render availability, active cars, and the activity log.
+5. Check out by plate, calculate the fee, release occupancy, and render again.
+
+The browser implementation is intentionally standalone and does not call the Python module. For production use, the Python domain logic would sit behind an API and the browser would call that API instead of maintaining local state.
+
+## Verification Strategy
+
+The tests focus on business invariants rather than only happy-path output:
+
+- Fee rounding and daily caps
+- Correct spot type selection
+- EV-only assignment
+- Duplicate active plates
+- Full-garage behavior
+- Invalid vehicle types
+- Ticket and plate lookup
+- Spot release after checkout

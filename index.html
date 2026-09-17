@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parking Garage</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <h1>City Centre Parking Garage</h1>
+      </header>
+
+      <main class="layout">
+        <section class="panel">
+          <h2>Garage setup</h2>
+          <div class="fields-grid">
+            <label>
+              Compact spots
+              <input id="compact-spots" type="number" min="0" value="1" />
+            </label>
+            <label>
+              Standard spots
+              <input id="standard-spots" type="number" min="0" value="2" />
+            </label>
+            <label>
+              EV spots
+              <input id="ev-spots" type="number" min="0" value="1" />
+            </label>
+            <label>
+              First hour rate
+              <input id="first-hour" type="number" min="0" value="10" />
+            </label>
+            <label>
+              Extra hour rate
+              <input id="additional-hour" type="number" min="0" value="6" />
+            </label>
+            <label>
+              Daily cap
+              <input id="daily-cap" type="number" min="0" value="40" />
+            </label>
+          </div>
+          <button id="apply-setup">Apply setup</button>
+        </section>
+
+        <section class="panel">
+          <h2>Check in</h2>
+          <form id="checkin-form">
+            <label>
+              Plate
+              <input id="plate-in" name="plate" required placeholder="ABC-123" />
+            </label>
+            <label>
+              Vehicle type
+              <select id="type-in" name="type">
+                <option value="compact">Compact</option>
+                <option value="standard">Standard</option>
+                <option value="ev">EV</option>
+              </select>
+            </label>
+            <label>
+              Check-in time
+              <input id="checkin-time" type="datetime-local" />
+            </label>
+            <button type="submit">Check in</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <h2>Check out</h2>
+          <form id="checkout-form">
+            <label>
+              Plate
+              <input id="plate-out" required placeholder="ABC-123" />
+            </label>
+            <label>
+              Check-out time
+              <input id="checkout-time" type="datetime-local" />
+            </label>
+            <button type="submit">Check out</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <h2>Availability</h2>
+          <div id="availability" class="availability-grid"></div>
+        </section>
+
+        <section class="panel wide-panel">
+          <h2>Current cars</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Plate</th>
+                <th>Type</th>
+                <th>Spot</th>
+                <th>Checked in</th>
+              </tr>
+            </thead>
+            <tbody id="cars-body"></tbody>
+          </table>
+        </section>
+
+        <section class="panel wide-panel">
+          <h2>Garage log</h2>
+          <ul id="log"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
