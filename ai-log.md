@@ -1,309 +1,203 @@
 # AI Development Log
 
-This file records the requests used to shape the parking garage project and the resulting implementation direction.
+## Prompt 1
 
-## Prompt 1: Define the Main Problem
+I want to build a parking garage management system. Imagine a busy city parking garage where cars are constantly coming and going. I want the system to help the attendant manage everything without manually tracking cars and parking spaces.
 
-> Build the attendant something so every car is charged correctly and no spot is double-parked.
+## Prompt 2
 
-### Resulting direction
+Now I asked you to start with the basic backend structure. Create the main classes we will need for the parking garage and keep the design clean so we can expand it later.
 
-- Model vehicles, spots, tickets, and the garage explicitly.
-- Make occupancy state authoritative.
-- Reject duplicate active vehicles.
-- Calculate fees from entry and exit timestamps.
+## Prompt 3
 
-## Prompt 2: Make It Reusable
+I want you to create a Vehicle class now. It should store the license plate and vehicle type. For vehicle types, let's support compact, standard, and EV.
 
-> Build it for any garage, not one.
+## Prompt 4
 
-### Resulting direction
+Please add validation to the vehicle. The license plate shouldn't be empty, and if someone enters lowercase letters or extra spaces, normalize the plate automatically.
 
-- Make floor count and space counts configurable.
-- Support compact, standard, and EV spot types.
-- Avoid relying on one fixed garage layout.
+## Prompt 5
 
-## Prompt 3: Prioritize the Core Workflow
+Now add a ParkingSpot class. I want every parking spot to know which floor it belongs to, its number, its type, and whether it is currently occupied.
 
-> Get check-in / check-out and the fee right first, then the spot types and lookups.
+## Prompt 6
 
-### Resulting direction
+I also need a parking ticket. Create a ticket object that connects a vehicle with its assigned parking spot and stores the vehicle's entry time.
 
-- Implement check-in and checkout before secondary reporting features.
-- Add deterministic hourly billing and daily caps.
-- Release spots during checkout.
-- Add lookup maps for license plates and tickets.
+## Prompt 7
 
-## Prompt 4: Add a Usable Interface
+Now make the ticket capable of storing the exit time and final parking fee as well, because we will need that information during checkout.
 
-> run this
+## Prompt 8
 
-> run in web
+Can you create the main ParkingGarage class now? I don't want the garage hardcoded for one example. It should work with different numbers of floors and parking spaces.
 
-> run this project in website version
+## Prompt 9
 
-### Resulting direction
+Please make the garage automatically create all of its parking spots when it is initialized.
 
-- Add an interactive Python CLI.
-- Add a standalone HTML, CSS, and JavaScript browser demo.
-- Provide local run commands using `pytest` and `python -m http.server`.
+## Prompt 10
 
-## Prompt 5: Expand to the Complete Specification
+Now I want each floor to support different parking spot types. We need compact, standard, and EV spots.
 
-> Build a complete Parking Garage Management System for a busy multi-level city-centre parking garage. Include configurable garage design, vehicle check-in and check-out, correct fee calculation, EV restrictions, spot lookups, ticket lookup, availability, and a CLI.
+## Prompt 11
 
-### Resulting direction
+Can you give every parking spot a useful ID? Something that tells me the floor and spot type would be helpful when the attendant needs to locate a car.
 
-- Use an object-oriented Python design.
-- Add `Vehicle`, `ParkingSpot`, `ParkingTicket`, `FeeCalculator`, `ParkingGarage`, and `GarageCLI`.
-- Test edge cases including partial hours, daily caps, duplicate plates, unavailable spots, invalid vehicle types, and spot release.
+## Prompt 12
 
-## Prompt 6: Document the Project
+Now add the logic for finding a free parking spot. The system should look at the vehicle type and find an appropriate available spot.
 
-> In this parking garage problem add README.md, reasoning.md in which you write the core logic behind this project pipeline, and ai-log.md in which you write a prompt as it looks like I asked the prompt to AI. Also push it into GitHub.
+## Prompt 13
 
-### Resulting direction
+I specifically want EV vehicles to use only EV spots. Don't allow an EV to take a normal parking space.
 
-- Make the README the entry point for setup, commands, features, and verification.
-- Explain the domain and processing pipeline in `reasoning.md`.
-- Preserve the request history and implementation decisions in this file.
-- Push the completed documentation and source files to the configured GitHub remote after local validation.
+## Prompt 14
 
-## Prompt 7: Add Different Vehicle Types
+For compact vehicles, try a compact spot first. But if there isn't one available, let the compact vehicle use a standard spot.
 
-> I need compact cars, normal cars, and electric cars to be treated differently. Please add vehicle type validation.
+## Prompt 15
 
-### Resulting direction
+Standard vehicles should only be assigned standard spots. Please make sure that rule is enforced.
 
-- Normalize vehicle types before processing.
-- Reject unsupported types early with a clear error.
-- Keep vehicle compatibility rules in the garage rather than in the CLI.
+## Prompt 16
 
-## Prompt 8: Reserve EV Spaces Correctly
+Now implement the check-in process. When a vehicle arrives, find a suitable free spot, mark it occupied, create a ticket, and store the vehicle as active.
 
-> An EV should never take a regular spot. Make sure the system refuses the check-in if no EV spot is free.
+## Prompt 17
 
-### Resulting direction
+Please make sure the same license plate cannot be checked in twice while the vehicle is already inside the garage. I don't want duplicate active vehicles.
 
-- Restrict EV vehicles to EV spots only.
-- Check EV availability before changing occupancy.
-- Keep the operation atomic when no compatible spot exists.
+## Prompt 18
 
-## Prompt 9: Prevent Duplicate Parking
+What should happen if there is no suitable parking space? Add proper error handling and give the attendant a useful message.
 
-> What happens if the attendant enters the same number plate twice? I want a proper error and no extra occupied spot.
+## Prompt 19
 
-### Resulting direction
+Now I want a way to find a currently parked vehicle using its license plate. The attendant shouldn't have to search manually.
 
-- Maintain an active-session index keyed by normalized license plate.
-- Reject a duplicate before allocating a spot.
-- Leave all occupancy and ticket state unchanged after rejection.
+## Prompt 20
 
-## Prompt 10: Make the Garage Multi-Level
+Please add ticket lookup as well. If I have a ticket ID, I should be able to find the active ticket.
 
-> Please support multiple floors and show the floor number on the ticket when a car checks in.
+## Prompt 21
 
-### Resulting direction
+Now add a function that tells me which parking spots are currently occupied.
 
-- Build spots per floor during garage initialization.
-- Include floor information in each parking spot and ticket.
-- Use deterministic spot IDs that identify the floor and type.
+## Prompt 22
 
-## Prompt 11: Add Ticket Numbers
+I also want to know how many spots are available. Make it possible to ask for compact, standard, or EV availability separately.
 
-> Every checked-in car should receive a unique ticket number that I can use later to find the parking record.
+## Prompt 23
 
-### Resulting direction
+Can you add a simple helper for checking whether an EV charging spot is currently free? This is something the attendant will probably ask frequently.
 
-- Generate sequential ticket IDs.
-- Store active tickets in a ticket lookup map.
-- Return ticket details from check-in and support ticket lookup.
+## Prompt 24
 
-## Prompt 12: Calculate Partial Hours
+The parking allocation is looking good. Now I want to work on the most important part: calculating the parking fee correctly.
 
-> Charge by started hours, so even 20 minutes should count as one hour and 1 hour 10 minutes should count as two.
+## Prompt 25
 
-### Resulting direction
+Make the first started hour use the first-hour price. Even if someone stays for only 20 or 30 minutes, charge the first-hour rate.
 
-- Convert duration to seconds.
-- Round partial hours up with ceiling logic.
-- Apply the first-hour and additional-hour rates consistently.
+## Prompt 26
 
-## Prompt 13: Add a Daily Maximum
+Now add the additional-hour rate. Every started hour after the first should use the additional-hour price.
 
-> Add a maximum daily charge so a customer does not keep paying unlimited hourly fees.
+## Prompt 27
 
-### Resulting direction
+Please make sure partial hours are rounded up. For example, 1 hour and 10 minutes should count as 2 hours.
 
-- Add a configurable daily cap to pricing.
-- Apply the cap to each rolling 24-hour billing window.
-- Preserve the normal hourly calculation below the cap.
+## Prompt 28
 
-## Prompt 14: Reject Invalid Checkout Times
+Now add a daily maximum charge. If the calculated fee becomes higher than the daily cap, use the daily cap instead.
 
-> If the checkout time is before the entry time, show an error instead of calculating a negative fee.
+## Prompt 29
 
-### Resulting direction
+I want the fee calculation separated from the garage logic. Create a FeeCalculator so the pricing rules are easier to test and maintain.
 
-- Validate timestamp order inside the fee calculator.
-- Raise the domain error before changing the ticket or spot.
-- Keep the active session intact after invalid checkout input.
+## Prompt 30
 
-## Prompt 15: Release the Spot at Checkout
+Please test the fee calculator with different parking durations. Include less than one hour, exactly one hour, more than one hour, and long parking sessions.
 
-> Once a car leaves, its spot must become available immediately for the next car.
+## Prompt 31
 
-### Resulting direction
+There's another important case: a car can enter one day and leave the next day. Make sure the daily cap logic handles day boundaries correctly.
 
-- Mark the assigned spot unoccupied after fee calculation succeeds.
-- Remove the active plate and ticket indexes.
-- Allow a later check-in to reuse the released spot.
+## Prompt 32
 
-## Prompt 16: Add Availability Queries
+Please make checkout reject an exit time that is earlier than the entry time. That should never be considered a valid parking session.
 
-> Give the attendant a quick way to see how many compact, standard, and EV spaces are free.
+## Prompt 33
 
-### Resulting direction
+Now implement the actual checkout flow. Find the vehicle, calculate the fee, store the checkout details, release the parking spot, and remove the vehicle from active vehicles.
 
-- Add a type-filtered availability method.
-- Count only unoccupied spots.
-- Expose the query through the CLI and browser view.
+## Prompt 34
 
-## Prompt 17: Show Occupied Spaces
+Please make sure that after checkout the parking spot immediately becomes available for another vehicle.
 
-> Add a command that lists the occupied spots and the license plate parked in each one.
+## Prompt 35
 
-### Resulting direction
+What happens if the attendant tries to check out a car that isn't currently parked? Add a clear error for that situation.
 
-- Iterate over occupied spots.
-- Match each occupied spot to its active ticket.
-- Print a concise spot-to-plate report.
+## Prompt 36
 
-## Prompt 18: Use Better Data Structures
+Now I want a simple command-line interface so I can test the parking garage without using the website.
 
-> The garage can be large, so do not search through every old parking record when finding an active car.
+## Prompt 37
 
-### Resulting direction
+Add a command for creating a garage from the CLI. I should be able to specify the number of floors and spaces per floor, including compact and EV spaces.
 
-- Keep active tickets in dictionaries keyed by plate and ticket ID.
-- Keep spot indexes by ID and floor.
-- Remove completed sessions from active maps at checkout.
+## Prompt 38
 
-## Prompt 19: Separate Business Logic from the CLI
+Now add a CHECK_IN command. It should accept a license plate and vehicle type and show the ticket and parking spot after successful check-in.
 
-> The command-line interface should only handle input and output. Put the parking rules in reusable classes.
+## Prompt 39
 
-### Resulting direction
+Please add a CHECK_OUT command as well. I want to enter a license plate and see the calculated parking fee.
 
-- Keep validation and allocation in `ParkingGarage`.
-- Keep fee calculation in `FeeCalculator`.
-- Let `GarageCLI` translate commands into domain method calls.
+## Prompt 40
 
-## Prompt 20: Add Regression Tests
+Add a FIND_VEHICLE command so the attendant can quickly locate a parked car using its plate number.
 
-> Write tests for the important parking rules before we call this finished.
+## Prompt 41
 
-### Resulting direction
+Now add an AVAILABLE command. I want to be able to ask how many compact, standard, or EV spaces are free.
 
-- Add pytest coverage for pricing, check-in, checkout, EV rules, duplicates, lookups, and release behavior.
-- Use fixed timestamps so fee tests are deterministic.
-- Test both successful operations and expected errors.
+## Prompt 42
 
-## Prompt 21: Make Tests Import Reliably
+Please add a SHOW_OCCUPIED command that tells me which spots are occupied and which vehicle is using each spot.
 
-> Pytest cannot find the parking module from the tests folder. Fix the project test setup.
+## Prompt 43
 
-### Resulting direction
+Now I asked you to create automated tests for the important parking rules. Don't just test the happy path.
 
-- Add a minimal `pytest.ini` configuration for the project root.
-- Run the suite from the repository directory.
-- Keep the source layout simple instead of adding unnecessary packaging steps.
+## Prompt 44
 
-## Prompt 22: Build a Browser Version
+Add tests for the fee calculation. I want to verify first-hour billing, partial-hour rounding, additional hours, and the daily cap.
 
-> I want to demonstrate this in a website, with forms for setup, check-in, and checkout.
+## Prompt 45
 
-### Resulting direction
+Please add tests for EV allocation, compact fallback to standard, standard vehicles, and a completely full garage.
 
-- Add an HTML interface with setup and transaction forms.
-- Use JavaScript state to model the demo garage.
-- Render availability, active cars, and a garage activity log.
+## Prompt 46
 
-## Prompt 23: Handle Browser Errors Clearly
+Now test duplicate check-ins. The same vehicle should never be allowed to occupy two spots.
 
-> When a check-in fails in the web page, show the user what went wrong instead of failing silently.
+## Prompt 47
 
-### Resulting direction
+Also test vehicle lookup, ticket lookup, checkout, and spot release. I want to make sure the garage state stays consistent.
 
-- Wrap browser actions in error handling.
-- Display status messages for successful and rejected operations.
-- Keep the UI state unchanged when an operation fails.
+## Prompt 48
 
-## Prompt 24: Make the Browser Demo Easy to Run
+The backend is working now. I asked you to build a proper web interface for the attendant. Make it feel like a real professional parking operations dashboard instead of a basic college project.
 
-> Tell me exactly how to open the website locally, and mention what to do if port 8000 is already busy.
+## Prompt 49
 
-### Resulting direction
+Now improve the website design. I want a clean Apple-inspired look with modern typography, rounded cards, subtle animations, clear spacing, responsive desktop/mobile layouts, live capacity information, and professional check-in and checkout forms.
 
-- Document `python -m http.server 8000`.
-- Provide the localhost URL.
-- Explain how to use an alternate port such as 8080.
+## Prompt 50
 
-## Prompt 25: Review Before Publishing
+Finally, I want you to review the whole parking garage project from the perspective of an actual attendant using it during a busy day. Check the parking logic, fee calculation, spot allocation, duplicate vehicle handling, lookup functions, checkout flow, error messages, activity log, and UI. Fix anything that could cause incorrect charges or incorrect occupancy. Keep the system configurable so it works for different garages, not just the demo data.
 
-> Before pushing this project, check the tests, whitespace, generated files, and Git status.
-
-### Resulting direction
-
-- Run `pytest -q`.
-- Run `git diff --check`.
-- Ignore Python caches and virtual environments.
-- Inspect the staged file list before committing.
-
-## Prompt 26: Publish the Finished Project
-
-> Commit the complete parking garage project and push it to my GitHub repository on the main branch.
-
-### Resulting direction
-
-- Stage source code, tests, browser files, and documentation.
-- Create a descriptive commit.
-- Push to the configured `origin/main` remote.
-- Confirm that the working tree and branch are synchronized afterward.
-
-## Prompt 27: Make the Website Feel Professional
-
-> The website works, but it looks basic. Make it feel more like Apple: clean, smooth, spacious, professional, and suitable for a real garage operator.
-
-### Resulting direction
-
-- Replace the generic grid with a clear operations dashboard hierarchy.
-- Use generous whitespace, restrained neutral surfaces, crisp typography, and focused blue actions.
-- Add a live capacity strip, a strong garage identity, current vehicle view, and activity history.
-- Keep the interface useful for repeated attendant workflows instead of turning it into a decorative landing page.
-
-## Prompt 28: Add Smooth Motion Without Losing Clarity
-
-> Add dynamic transitions and small animations, but keep the page fast and do not make the controls distracting.
-
-### Resulting direction
-
-- Add staged page-entry reveals.
-- Add subtle button, input, availability-card, toast, and activity-list transitions.
-- Respect `prefers-reduced-motion` for users who disable animation.
-- Use motion to explain state changes, not to decorate every element.
-
-## Prompt 29: Keep the Browser Rules Accurate
-
-> Make sure the website does not allow a checkout before check-in, and make lowercase and uppercase plate numbers behave as the same car.
-
-### Resulting direction
-
-- Normalize plates on both check-in and checkout.
-- Reject invalid dates and checkout times earlier than arrival.
-- Update occupancy only after validation succeeds.
-- Show a visible error toast when an operation is rejected.
-
-## Validation Record
-
-The Python regression suite currently validates the core business rules with seven passing tests. Documentation changes should be checked with `git diff --check`, followed by another `pytest -q` run before publishing changes.
+The final result should feel like a small production-quality parking management system that is simple for an attendant to understand and reliable enough to use throughout the day.
