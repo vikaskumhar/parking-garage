@@ -14,7 +14,7 @@ A configurable multi-floor parking garage system for checking vehicles in and ou
 - Occupancy and available-space lookup
 - Hourly pricing with a configurable daily cap
 - Interactive command-line interface
-- Browser demo with setup, check-in, check-out, availability, and activity log
+- Polished responsive browser dashboard with setup, check-in, check-out, availability, and activity log
 
 ## Project Files
 

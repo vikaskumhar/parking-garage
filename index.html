@@ -3,112 +3,121 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Parking Garage</title>
+    <meta name="theme-color" content="#f5f5f7" />
+    <title>Parkline | Garage operations</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="app">
-      <header class="topbar">
-        <h1>City Centre Parking Garage</h1>
+      <header class="topbar reveal">
+        <a class="brand" href="#top" aria-label="Parkline home">
+          <span class="brand-mark" aria-hidden="true">P</span>
+          <span>Parkline</span>
+        </a>
+        <nav class="topnav" aria-label="Main navigation">
+          <a href="#operations">Operations</a>
+          <a href="#live-view">Live view</a>
+        </nav>
+        <div class="system-status"><span></span> System live</div>
       </header>
 
-      <main class="layout">
-        <section class="panel">
-          <h2>Garage setup</h2>
-          <div class="fields-grid">
-            <label>
-              Compact spots
-              <input id="compact-spots" type="number" min="0" value="1" />
-            </label>
-            <label>
-              Standard spots
-              <input id="standard-spots" type="number" min="0" value="2" />
-            </label>
-            <label>
-              EV spots
-              <input id="ev-spots" type="number" min="0" value="1" />
-            </label>
-            <label>
-              First hour rate
-              <input id="first-hour" type="number" min="0" value="10" />
-            </label>
-            <label>
-              Extra hour rate
-              <input id="additional-hour" type="number" min="0" value="6" />
-            </label>
-            <label>
-              Daily cap
-              <input id="daily-cap" type="number" min="0" value="40" />
-            </label>
+      <main id="top">
+        <section class="hero reveal reveal-delay-1">
+          <div class="hero-copy">
+            <p class="eyebrow">CITY CENTRE / GARAGE CONTROL</p>
+            <h1>Every arrival.<br /><em>Exactly where it belongs.</em></h1>
+            <p class="hero-text">A calm, precise view of your garage. Manage capacity, move cars through, and keep every charge accounted for.</p>
           </div>
-          <button id="apply-setup">Apply setup</button>
+          <div class="hero-orbit" aria-hidden="true">
+            <div class="orbit-ring ring-one"></div>
+            <div class="orbit-ring ring-two"></div>
+            <div class="orbit-core"><span>PL</span></div>
+            <div class="orbit-dot dot-one"></div>
+            <div class="orbit-dot dot-two"></div>
+          </div>
         </section>
 
-        <section class="panel">
-          <h2>Check in</h2>
-          <form id="checkin-form">
-            <label>
-              Plate
-              <input id="plate-in" name="plate" required placeholder="ABC-123" />
-            </label>
-            <label>
-              Vehicle type
-              <select id="type-in" name="type">
-                <option value="compact">Compact</option>
-                <option value="standard">Standard</option>
-                <option value="ev">EV</option>
-              </select>
-            </label>
-            <label>
-              Check-in time
-              <input id="checkin-time" type="datetime-local" />
-            </label>
-            <button type="submit">Check in</button>
-          </form>
-        </section>
-
-        <section class="panel">
-          <h2>Check out</h2>
-          <form id="checkout-form">
-            <label>
-              Plate
-              <input id="plate-out" required placeholder="ABC-123" />
-            </label>
-            <label>
-              Check-out time
-              <input id="checkout-time" type="datetime-local" />
-            </label>
-            <button type="submit">Check out</button>
-          </form>
-        </section>
-
-        <section class="panel">
-          <h2>Availability</h2>
+        <section id="operations" class="metrics reveal reveal-delay-2" aria-label="Garage availability">
+          <div class="metric-intro">
+            <p class="eyebrow">LIVE CAPACITY</p>
+            <strong>Right now</strong>
+            <span>Updated as vehicles move.</span>
+          </div>
           <div id="availability" class="availability-grid"></div>
         </section>
 
-        <section class="panel wide-panel">
-          <h2>Current cars</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Plate</th>
-                <th>Type</th>
-                <th>Spot</th>
-                <th>Checked in</th>
-              </tr>
-            </thead>
-            <tbody id="cars-body"></tbody>
-          </table>
+        <section class="operations-grid">
+          <section class="panel setup-panel reveal reveal-delay-3">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">01 / CONFIGURATION</p>
+                <h2>Shape your garage.</h2>
+              </div>
+              <span class="panel-icon" aria-hidden="true">⌘</span>
+            </div>
+            <p class="panel-description">Set the capacity and rates for this operating shift.</p>
+            <div class="fields-grid">
+              <label><span>Compact spaces</span><input id="compact-spots" type="number" min="0" value="1" /></label>
+              <label><span>Standard spaces</span><input id="standard-spots" type="number" min="0" value="2" /></label>
+              <label><span>EV spaces</span><input id="ev-spots" type="number" min="0" value="1" /></label>
+              <label><span>First hour <b>₹</b></span><input id="first-hour" type="number" min="0" value="10" /></label>
+              <label><span>Extra hour <b>₹</b></span><input id="additional-hour" type="number" min="0" value="6" /></label>
+              <label><span>Daily cap <b>₹</b></span><input id="daily-cap" type="number" min="0" value="40" /></label>
+            </div>
+            <button id="apply-setup" class="button button-dark" type="button">Apply configuration <span>→</span></button>
+          </section>
+
+          <section class="panel action-panel reveal reveal-delay-4">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">02 / MOVEMENT</p>
+                <h2>Move a vehicle.</h2>
+              </div>
+              <span class="panel-icon" aria-hidden="true">↗</span>
+            </div>
+            <div class="forms-split">
+              <form id="checkin-form" class="operation-form">
+                <div class="form-title"><span class="step-dot blue">01</span><span>Check in</span></div>
+                <label><span>License plate</span><input id="plate-in" name="plate" required placeholder="ABC-123" /></label>
+                <label><span>Vehicle type</span><select id="type-in" name="type"><option value="compact">Compact</option><option value="standard">Standard</option><option value="ev">Electric vehicle</option></select></label>
+                <label><span>Arrival time <small>Optional</small></span><input id="checkin-time" type="datetime-local" /></label>
+                <button class="button button-blue" type="submit">Check in <span>→</span></button>
+              </form>
+              <form id="checkout-form" class="operation-form checkout-form">
+                <div class="form-title"><span class="step-dot orange">02</span><span>Check out</span></div>
+                <label><span>License plate</span><input id="plate-out" required placeholder="ABC-123" /></label>
+                <label><span>Departure time <small>Optional</small></span><input id="checkout-time" type="datetime-local" /></label>
+                <div class="fee-note"><span>Billing</span><strong>Per started hour</strong></div>
+                <button class="button button-light" type="submit">Check out <span>→</span></button>
+              </form>
+            </div>
+          </section>
         </section>
 
-        <section class="panel wide-panel">
-          <h2>Garage log</h2>
-          <ul id="log"></ul>
+        <section id="live-view" class="live-section reveal reveal-delay-5">
+          <div class="live-heading">
+            <div><p class="eyebrow">03 / LIVE VIEW</p><h2>Inside the garage.</h2></div>
+            <span class="live-badge"><i></i> Live occupancy</span>
+          </div>
+          <div class="live-grid">
+            <section class="panel table-panel">
+              <div class="panel-title-row"><h3>Current vehicles</h3><span id="vehicle-count">0 active</span></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Plate</th><th>Type</th><th>Spot</th><th>Checked in</th></tr></thead>
+                  <tbody id="cars-body"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel log-panel">
+              <div class="panel-title-row"><h3>Activity</h3><span>Latest first</span></div>
+              <ul id="log"></ul>
+            </section>
+          </div>
         </section>
       </main>
+      <footer class="footer reveal"><span>Parkline Operations</span><span>Precision for every space.</span></footer>
     </div>
-
     <script src="script.js"></script>
   </body>
 </html>

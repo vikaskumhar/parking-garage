@@ -89,6 +89,22 @@ The browser demo mirrors the core workflow in JavaScript:
 
 The browser implementation is intentionally standalone and does not call the Python module. For production use, the Python domain logic would sit behind an API and the browser would call that API instead of maintaining local state.
 
+## Frontend Experience Pipeline
+
+The browser interface is designed as an operations product rather than a collection of generic forms:
+
+1. Establish a quiet visual hierarchy with a clear garage identity, live system state, and a single primary hero message.
+2. Put capacity at the top of the working area so an attendant can understand the garage before acting.
+3. Group setup and vehicle movement into separate panels with numbered steps and obvious action buttons.
+4. Keep current vehicles and activity history in a live view beneath the actions.
+5. Use restrained neutrals for structure, blue for primary actions, orange for departures, and green for healthy capacity signals.
+6. Use short reveal, hover, focus, and status transitions to make changes legible without slowing down repeated work.
+7. Collapse the two-column layout into a single mobile workflow while preserving the same control order.
+
+The visual direction takes cues from Apple's product pages: generous whitespace, precise typography, soft surfaces, quiet borders, and small moments of motion. It is adapted for a busy garage operator, so the interface remains information-dense and task-focused rather than becoming a marketing page.
+
+The browser demo also normalizes license plates and rejects invalid checkout times before mutating occupancy. This keeps the client-side demonstration aligned with the Python system's core invariants.
+
 ## Verification Strategy
 
 The tests focus on business invariants rather than only happy-path output:

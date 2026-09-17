@@ -29,7 +29,7 @@ class ParkingGarage {
   }
 
   checkIn(car, checkInTime = new Date()) {
-    const plate = String(car.plate || '').trim();
+    const plate = String(car.plate || '').trim().toUpperCase();
     const type = String(car.vehicleType || '').toLowerCase();
 
     if (!plate) throw new Error('Plate is required');
@@ -60,10 +60,13 @@ class ParkingGarage {
     }
 
     if (type === 'compact') {
-      if (!this.spots.compact || this.occupancy.compact >= this.spots.compact) {
-        throw new Error('No compact spots available');
+      if (this.spots.compact && this.occupancy.compact < this.spots.compact) {
+        return 'compact';
       }
-      return 'compact';
+      if (this.spots.standard && this.occupancy.standard < this.spots.standard) {
+        return 'standard';
+      }
+      throw new Error('No compact-compatible spots available');
     }
 
     if (!this.spots.standard || this.occupancy.standard >= this.spots.standard) {
@@ -73,14 +76,18 @@ class ParkingGarage {
   }
 
   checkOut(plate, checkOutTime = new Date()) {
-    const record = this.activeCars.get(String(plate));
+    const normalizedPlate = String(plate || '').trim().toUpperCase();
+    const record = this.activeCars.get(normalizedPlate);
     if (!record) throw new Error(`Car ${plate} not found`);
 
     const outTime = new Date(checkOutTime);
-    const durationSeconds = Math.max(0, (outTime - new Date(record.checkInTime)) / 1000);
+    if (Number.isNaN(outTime.getTime())) throw new Error('Checkout time is invalid');
+    if (outTime < new Date(record.checkInTime)) throw new Error('Checkout time must be after check-in');
+
+    const durationSeconds = (outTime - new Date(record.checkInTime)) / 1000;
     const fee = this.calculateFee(durationSeconds);
 
-    this.activeCars.delete(String(plate));
+    this.activeCars.delete(normalizedPlate);
     this.occupancy[record.spotType] = Math.max(0, this.occupancy[record.spotType] - 1);
     this.log.push(`Checked out ${plate} for $${fee}`);
 
@@ -116,6 +123,7 @@ const els = {
   availability: document.getElementById('availability'),
   carsBody: document.getElementById('cars-body'),
   log: document.getElementById('log'),
+  vehicleCount: document.getElementById('vehicle-count'),
   checkinForm: document.getElementById('checkin-form'),
   checkoutForm: document.getElementById('checkout-form'),
 };
@@ -124,6 +132,19 @@ function formatDateTime(value) {
   if (!value) return '—';
   const date = new Date(value);
   return date.toLocaleString();
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function displayVehicleType(type) {
+  return type === 'ev' ? 'Electric' : type.charAt(0).toUpperCase() + type.slice(1);
 }
 
 function setStatus(message, type = 'success') {
@@ -150,17 +171,18 @@ function renderAvailability() {
 
 function renderCars() {
   const rows = [...state.garage.activeCars.values()];
+  els.vehicleCount.textContent = `${rows.length} active`;
 
   if (!rows.length) {
-    els.carsBody.innerHTML = `<tr><td colspan="4">No cars parked</td></tr>`;
+    els.carsBody.innerHTML = `<tr><td colspan="4" class="empty-state">No vehicles are parked right now.</td></tr>`;
     return;
   }
 
   els.carsBody.innerHTML = rows.map((car) => `
     <tr>
-      <td>${car.plate}</td>
-      <td>${car.vehicleType}</td>
-      <td>${car.spotType}</td>
+      <td>${escapeHtml(car.plate)}</td>
+      <td><span class="type-badge">${displayVehicleType(car.vehicleType)}</span></td>
+      <td>${escapeHtml(car.spotType)}</td>
       <td>${formatDateTime(car.checkInTime)}</td>
     </tr>
   `).join('');
@@ -178,20 +200,26 @@ function renderAll() {
 }
 
 document.getElementById('apply-setup').addEventListener('click', () => {
-  state.garage = new ParkingGarage(
-    {
+  try {
+    const spots = {
       compact: Number(els.compactSpots.value || 0),
       standard: Number(els.standardSpots.value || 0),
       ev: Number(els.evSpots.value || 0),
-    },
-    {
+    };
+    const rates = {
       first_hour: Number(els.firstHour.value || 0),
       additional_hour: Number(els.additionalHour.value || 0),
       daily_cap: Number(els.dailyCap.value || 0),
+    };
+    if (Object.values(spots).some((value) => value < 0) || Object.values(rates).some((value) => value < 0)) {
+      throw new Error('Configuration values cannot be negative');
     }
-  );
-  setStatus('Garage setup updated', 'success');
-  renderAll();
+    state.garage = new ParkingGarage(spots, rates);
+    setStatus('Garage configuration updated', 'success');
+    renderAll();
+  } catch (error) {
+    setStatus(error.message, 'error');
+  }
 });
 
 els.checkinForm.addEventListener('submit', (event) => {
@@ -217,7 +245,7 @@ els.checkoutForm.addEventListener('submit', (event) => {
     const checkOutTime = document.getElementById('checkout-time').value ? new Date(document.getElementById('checkout-time').value) : new Date();
 
     const fee = state.garage.checkOut(plate, checkOutTime);
-    setStatus(`Checked out ${plate}. Fee: $${fee}`, 'success');
+    setStatus(`Checked out ${plate.toUpperCase()}. Fee: ₹${fee}`, 'success');
     els.checkoutForm.reset();
     renderAll();
   } catch (error) {

@@ -271,6 +271,39 @@ This file records the requests used to shape the parking garage project and the 
 - Push to the configured `origin/main` remote.
 - Confirm that the working tree and branch are synchronized afterward.
 
+## Prompt 27: Make the Website Feel Professional
+
+> The website works, but it looks basic. Make it feel more like Apple: clean, smooth, spacious, professional, and suitable for a real garage operator.
+
+### Resulting direction
+
+- Replace the generic grid with a clear operations dashboard hierarchy.
+- Use generous whitespace, restrained neutral surfaces, crisp typography, and focused blue actions.
+- Add a live capacity strip, a strong garage identity, current vehicle view, and activity history.
+- Keep the interface useful for repeated attendant workflows instead of turning it into a decorative landing page.
+
+## Prompt 28: Add Smooth Motion Without Losing Clarity
+
+> Add dynamic transitions and small animations, but keep the page fast and do not make the controls distracting.
+
+### Resulting direction
+
+- Add staged page-entry reveals.
+- Add subtle button, input, availability-card, toast, and activity-list transitions.
+- Respect `prefers-reduced-motion` for users who disable animation.
+- Use motion to explain state changes, not to decorate every element.
+
+## Prompt 29: Keep the Browser Rules Accurate
+
+> Make sure the website does not allow a checkout before check-in, and make lowercase and uppercase plate numbers behave as the same car.
+
+### Resulting direction
+
+- Normalize plates on both check-in and checkout.
+- Reject invalid dates and checkout times earlier than arrival.
+- Update occupancy only after validation succeeds.
+- Show a visible error toast when an operation is rejected.
+
 ## Validation Record
 
 The Python regression suite currently validates the core business rules with seven passing tests. Documentation changes should be checked with `git diff --check`, followed by another `pytest -q` run before publishing changes.
