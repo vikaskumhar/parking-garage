@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 
 VALID_VEHICLE_TYPES = {"compact", "standard", "ev"}
@@ -12,6 +13,52 @@ VALID_SPOT_TYPES = {"compact", "standard", "ev"}
 
 class ParkingGarageError(ValueError):
     pass
+
+
+class RateCardImporter:
+    """Normalize human-entered rate cards into the fee calculator schema."""
+
+    RATE_KEYS = {
+        "first_hour": ("first_hour", "first hour", "first", "initial"),
+        "additional_hour": ("additional_hour", "additional hour", "extra hour", "extra"),
+        "daily_cap": ("daily_cap", "daily cap", "cap", "maximum", "max"),
+    }
+
+    @classmethod
+    def _number(cls, value: Any) -> int:
+        if isinstance(value, (int, float)):
+            return int(value)
+        matches = re.findall(r"-?\d+(?:\.\d+)?", str(value))
+        if not matches:
+            raise ParkingGarageError(f"Rate value is missing: {value!r}")
+        return int(float(matches[0]))
+
+    @classmethod
+    def _field(cls, values: Mapping[str, Any], aliases: tuple[str, ...], default: int = 0) -> int:
+        normalized = {re.sub(r"[^a-z0-9]", "", str(key).lower()): value for key, value in values.items()}
+        for alias in aliases:
+            key = re.sub(r"[^a-z0-9]", "", alias.lower())
+            if key in normalized:
+                return cls._number(normalized[key])
+        return default
+
+    @classmethod
+    def clean(cls, rate_card: Mapping[str, Any]) -> Dict[str, Dict[str, int]]:
+        """Clean junk currency text and aliases from a per-spot-type rate card."""
+        normalized_card = {
+            re.sub(r"[^a-z0-9]", "", str(key).lower()): value
+            for key, value in rate_card.items()
+        }
+        cleaned: Dict[str, Dict[str, int]] = {}
+        for spot_type in VALID_SPOT_TYPES:
+            raw = normalized_card.get(spot_type, {})
+            if not isinstance(raw, Mapping):
+                raise ParkingGarageError(f"Rate card for {spot_type} must be an object")
+            cleaned[spot_type] = {
+                key: cls._field(raw, aliases)
+                for key, aliases in cls.RATE_KEYS.items()
+            }
+        return cleaned
 
 
 @dataclass
@@ -123,7 +170,8 @@ class ParkingGarage:
         spaces_per_floor: int = 20,
         compact_per_floor: int = 0,
         ev_per_floor: int = 0,
-        pricing: Optional[Dict[str, float]] = None,
+        pricing: Optional[Dict[str, Any]] = None,
+        rate_card: Optional[Mapping[str, Any]] = None,
     ) -> None:
         if floor_count <= 0 or spaces_per_floor <= 0:
             raise ParkingGarageError("Garage dimensions must be positive")
@@ -134,13 +182,19 @@ class ParkingGarage:
         self.ev_per_floor = int(ev_per_floor)
 
         default_pricing = {"first_hour": 50, "additional_hour": 30, "daily_cap": 300}
-        self.pricing = {**default_pricing, **(pricing or {})}
+        self.pricing: Dict[str, Any] = {**default_pricing, **(pricing or {})}
+        self.rate_card: Dict[str, Dict[str, int]] = {
+            spot_type: dict(self.pricing) for spot_type in VALID_SPOT_TYPES
+        }
+        if rate_card is not None:
+            self.import_rate_card(rate_card)
 
         self.spots_by_id: Dict[str, ParkingSpot] = {}
         self.spots_by_floor: Dict[int, List[ParkingSpot]] = {}
         self._sessions_by_plate: Dict[str, ParkingTicket] = {}
         self._sessions_by_ticket: Dict[str, ParkingTicket] = {}
         self._ticket_counter = 1000
+        self.closed_sessions: List[ParkingTicket] = []
         self._build_garage()
 
     @property
@@ -174,6 +228,10 @@ class ParkingGarage:
     def _next_ticket_id(self) -> str:
         self._ticket_counter += 1
         return f"T{self._ticket_counter}"
+
+    def import_rate_card(self, rate_card: Mapping[str, Any]) -> Dict[str, Dict[str, int]]:
+        self.rate_card = RateCardImporter.clean(rate_card)
+        return self.rate_card
 
     def available_spots(self, spot_type: Optional[str] = None) -> int:
         normalized = (spot_type or "").strip().lower()
@@ -245,14 +303,53 @@ class ParkingGarage:
         if exit_time is None:
             exit_time = datetime.now()
 
-        fee = FeeCalculator.calculate_by_rates(ticket.entry_time, exit_time, self.pricing)
+        rates = self.rate_card.get(ticket.spot.spot_type, self.pricing)
+        fee = FeeCalculator.calculate_by_rates(ticket.entry_time, exit_time, rates)
         ticket.exit_time = exit_time
         ticket.fee = fee
         ticket.spot.occupied = False
 
         del self._sessions_by_plate[plate]
         del self._sessions_by_ticket[ticket.ticket_id]
+        self.closed_sessions.append(ticket)
         return fee
+
+    def transfer_session(self, old_plate: str, new_plate: str) -> ParkingTicket:
+        """Move an open session to a new plate without changing its spot or entry time."""
+        old_key = str(old_plate).strip().upper()
+        new_key = str(new_plate).strip().upper()
+        if not new_key:
+            raise ParkingGarageError("New license plate cannot be empty")
+        ticket = self._sessions_by_plate.get(old_key)
+        if ticket is None:
+            raise ParkingGarageError(f"Vehicle {old_key} not found")
+        if new_key in self._sessions_by_plate:
+            raise ParkingGarageError(f"Vehicle {new_key} is already parked")
+
+        ticket.vehicle.license_plate = new_key
+        del self._sessions_by_plate[old_key]
+        self._sessions_by_plate[new_key] = ticket
+        return ticket
+
+    transfer = transfer_session
+
+    def auto_close_overdue(self, now: Optional[datetime] = None) -> List[Dict[str, Any]]:
+        """Close and bill every active session whose age is at least 24 hours."""
+        clock = now or datetime.now()
+        overdue = [
+            ticket for ticket in self.active_sessions
+            if clock - ticket.entry_time >= timedelta(hours=24)
+        ]
+        results = []
+        for ticket in overdue:
+            fee = self.check_out(ticket.license_plate, clock)
+            results.append({
+                "ticket_id": ticket.ticket_id,
+                "license_plate": ticket.license_plate,
+                "fee": fee,
+                "exit_time": clock.isoformat(),
+            })
+        return results
 
 
 class GarageCLI:
@@ -354,6 +451,8 @@ Car = Vehicle
 ParkingRecord = ParkingTicket
 
 __all__ = [
+    "ParkingGarageError",
+    "RateCardImporter",
     "Vehicle",
     "Car",
     "ParkingSpot",

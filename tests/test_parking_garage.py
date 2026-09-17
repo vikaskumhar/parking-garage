@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from parking_garage import FeeCalculator, ParkingGarage, Vehicle
+from parking_garage import FeeCalculator, ParkingGarage, RateCardImporter, Vehicle
 
 
 @pytest.fixture
@@ -85,3 +85,44 @@ def test_ticket_lookup_and_spot_release(garage):
     garage.check_out("TICKET1", datetime(2024, 1, 1, 13, 0, 0))
     assert garage.find_ticket(ticket.ticket_id) is None
     assert found.spot.occupied is False
+
+
+def test_messy_rate_card_is_cleaned_and_applied_by_spot_type():
+    card = {
+        "compact": {"first hour": "₹ 40 / hr", "extra hour": "₹ 20", "daily cap": "INR 180"},
+        "standard": {"first_hour": "$50", "additional-hour": "30 rupees", "cap": "300"},
+        "ev": {"first": "₹60", "additional hour": "₹35", "maximum": "₹350"},
+    }
+    card["EV"] = card.pop("ev")
+    cleaned = RateCardImporter.clean(card)
+    assert cleaned["ev"] == {"first_hour": 60, "additional_hour": 35, "daily_cap": 350}
+
+    garage = ParkingGarage(spaces_per_floor=3, compact_per_floor=1, ev_per_floor=1, rate_card=card)
+    ticket = garage.check_in(Vehicle("COMPACT-RATE", "compact"), datetime(2024, 1, 1, 9))
+    assert garage.check_out(ticket.license_plate, datetime(2024, 1, 1, 11, 1)) == 80
+
+
+def test_transfer_preserves_open_session_spot_and_entry_time(garage):
+    original = garage.check_in(Vehicle("VALET-OLD", "standard"), datetime(2024, 1, 1, 9))
+    spot_id = original.spot.spot_id
+    entry_time = original.entry_time
+
+    transferred = garage.transfer_session("valet-old", "VALET-NEW")
+
+    assert transferred.ticket_id == original.ticket_id
+    assert transferred.spot.spot_id == spot_id
+    assert transferred.entry_time == entry_time
+    assert garage.find_vehicle("VALET-OLD") is None
+    assert garage.find_vehicle("VALET-NEW") is transferred
+
+
+def test_auto_close_bills_sessions_parked_at_least_24_hours(garage):
+    entry = datetime(2024, 1, 1, 9)
+    ticket = garage.check_in(Vehicle("OVERNIGHT", "standard"), entry)
+
+    closed = garage.auto_close_overdue(datetime(2024, 1, 2, 9))
+
+    assert closed[0]["ticket_id"] == ticket.ticket_id
+    assert closed[0]["fee"] == 300
+    assert garage.find_vehicle("OVERNIGHT") is None
+    assert ticket.spot.occupied is False

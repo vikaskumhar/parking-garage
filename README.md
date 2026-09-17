@@ -22,6 +22,8 @@ A configurable multi-floor parking garage system for checking vehicles in and ou
 | File | Purpose |
 | --- | --- |
 | [parking_garage.py](parking_garage.py) | Python domain model, fee calculator, and CLI |
+| [parking_server.py](parking_server.py) | Standard-library HTTP API for automation and lifecycle actions |
+| [app.py](app.py) | HTTP API entry point |
 | [tests/test_parking_garage.py](tests/test_parking_garage.py) | Business-rule regression tests |
 | [index.html](index.html) | Browser demo structure |
 | [style.css](style.css) | Browser demo styling |
@@ -62,6 +64,29 @@ EXIT
 ```
 
 The `CREATE_GARAGE` arguments are floors, spaces per floor, compact spaces per floor, and EV spaces per floor.
+
+## Run the Automation API
+
+```bash
+python app.py
+```
+
+The API listens on `http://127.0.0.1:8001` by default. The automation endpoint closes every active session parked for at least 24 hours and bills it at the supplied clock time:
+
+```bash
+curl -X POST http://127.0.0.1:8001/clock \
+	-H 'Content-Type: application/json' \
+	-d '{"now":"2024-01-02T09:00:00"}'
+```
+
+Additional lifecycle endpoints are available for the same service:
+
+- `POST /check-in` accepts `{"license_plate":"EV-1","vehicle_type":"ev","entry_time":"2024-01-01T09:00:00"}`.
+- `POST /check-out` accepts `{"license_plate":"EV-1","exit_time":"2024-01-01T11:00:00"}`.
+- `POST /rate-card` imports a messy per-type rate card and returns cleaned rates.
+- `POST /transfer` accepts `{"from_plate":"OLD-1","to_plate":"NEW-1"}` and preserves the open ticket's spot and entry time.
+
+Rate-card values may contain currency symbols and words such as `"INR 50 / hour"`; the importer extracts the numeric value and normalizes aliases such as `first hour`, `extra hour`, and `daily cap`.
 
 ## Run the Browser Demo
 

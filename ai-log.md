@@ -236,3 +236,29 @@ Extend the parking website so it feels like a high-level Apple-style product: co
 - Derive live metrics from garage state instead of hard-coding dashboard numbers.
 - Preserve the quiet Apple-inspired structure while adding blue, green, orange, and violet accents.
 - Keep the operational forms accessible and stack them cleanly on mobile.
+
+## Prompt 54
+
+The storyline now has three graded twists. Add a messy per-spot-type rate card importer, a nightly `POST /clock` job that closes sessions over 24 hours, and a valet plate transfer that keeps the same spot and entry time.
+
+### Resulting direction
+
+- Normalize currency-heavy rate values and inconsistent rate field names.
+- Select cleaned pricing using the assigned spot type during checkout.
+- Add `auto_close_overdue(now)` and expose it through a standard-library HTTP API.
+- Reuse checkout for nightly billing so spot release and indexes remain correct.
+- Add `transfer_session(old_plate, new_plate)` with duplicate-destination protection.
+- Provide `app.py` so the automation service can be run directly.
+
+## Prompt 55
+
+The parking garage storyline has new graded twists. Please support a messy rate card with separate prices for compact, standard, and EV spots, add a nightly automation endpoint at `POST /clock` that bills anything parked for 24 hours or more, and add a valet hand-off that transfers an open session to another plate without changing the spot or entry time. Make it usable through an API and test all of it.
+
+### Resulting direction
+
+- Add `RateCardImporter` to clean currency text, punctuation, aliases, and case differences.
+- Store rates per spot type and use the assigned spot type at checkout.
+- Add `auto_close_overdue(now)` and reuse the normal checkout path for correct billing and spot release.
+- Expose `/check-in`, `/check-out`, `/clock`, `/rate-card`, and `/transfer` through a standard-library HTTP service.
+- Add a direct `app.py` server entry point.
+- Test messy rate input, exact 24-hour closure, timezone-aware clock input, transfer invariants, and end-to-end HTTP automation.

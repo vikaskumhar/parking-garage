@@ -119,6 +119,22 @@ The static browser demo has a lightweight operator authentication layer:
 
 This is a frontend experience layer, not secure production authentication. Since static HTML and JavaScript cannot safely keep a secret, a real deployment must verify credentials on a server or through an identity provider, issue a secure session cookie, and enforce authorization on every backend operation.
 
+## Twists Pipeline
+
+### Messy rate-card import
+
+`RateCardImporter` accepts a mapping for compact, standard, and EV spots. It normalizes case and punctuation in field names, accepts aliases such as `first hour`, `extra hour`, and `maximum`, and extracts the first numeric value from currency-heavy strings. The cleaned card is stored per spot type, so checkout selects pricing from the actual assigned spot rather than applying one global price.
+
+### Nightly clock automation
+
+`ParkingGarage.auto_close_overdue(now)` scans active sessions and selects sessions aged at least 24 hours. It calls the same checkout path used by the attendant, which calculates the fee, marks the spot free, removes both active indexes, and records the closed ticket. `POST /clock` supplies the automation timestamp and returns each auto-closed ticket and fee.
+
+### Valet plate transfer
+
+`transfer_session(old_plate, new_plate)` changes only the active plate index and the ticket's vehicle plate. The ticket ID, assigned spot, vehicle type, and entry timestamp remain unchanged. It rejects missing sessions and a destination plate that is already active, so a valet hand-off cannot create duplicate occupancy.
+
+The standard-library API in `parking_server.py` exposes `/clock`, `/rate-card`, and `/transfer` without adding a framework dependency. `app.py` is the executable entry point for local automation testing.
+
 ## Live Insight and Responsive Pipeline
 
 The dashboard derives occupancy percentage, open EV bays, and current shift time from the same in-memory garage state used by the forms. These values are re-rendered whenever configuration, check-in, or checkout changes. The insight cards are laid out as a horizontal scroll-snap rail, which gives touch users a natural swipe interaction while desktop users see the complete row. CSS media queries stack the operational panels, reduce navigation density, and preserve large touch targets on smaller screens.
